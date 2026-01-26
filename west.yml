@@ -1,0 +1,59 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# West manifest file for Simplicity SDK for Zephyr.
+#
+# The west workspace configuration file, .west/config, sets the
+# path to the project containing this file in the [manifest] section's
+# "path" variable.
+#
+# You are free to create your own manifest files and put them in any
+# repository you want, to create your own custom workspaces.
+# For example, you could create a manifest file in your own application
+# directory, which would pull this repository in as an ordinary project.
+#
+# You can pass your manifest repository to west init when creating a
+# new workspace. See the west documentation for more information.
+
+manifest:
+  remotes:
+    - name: zephyrproject-rtos
+      url-base: https://github.com/zephyrproject-rtos
+    - name: microchip
+      url-base: https://github.com/Zephyr4Microchip
+
+  projects:
+    - name: zephyr
+      remote: microchip
+      repo-path: mchp-zephyr
+      revision: 10b9520cacf450998150d725274a7d6b88c48e24
+      import:
+        # Microchip SDK for Zephyr imports the Zephyr main tree at the
+        # revision given above. Only the modules named below are imported.
+        # If a module is overridden it is not listed here, and instead
+        # added separately at the top level.
+        name-allowlist:
+          - cmsis-dsp
+          - cmsis-nn
+          - cmsis_6
+          - hal_microchip
+          - fatfs
+          - littlefs
+          - lvgl
+          - picolibc
+          - segger
+          - zcbor
+    - name: hal_microchip
+      remote: microchip
+      repo-path: mchp-hal
+      revision: f5e6963b729995fea3526a3f5edd6c2e2b61a3ac
+      path: modules/hal/hal_microchip
+    - name: wireless-ble
+      remote: microchip
+      repo-path: wireless-ble
+      revision: 3a5c42d7fd8024495e5e0786b1263167418ca8f2
+
+  self:
+    path: zsdk
+    # Configure west extensions.
+    #west-commands: scripts/west-commands.yml
