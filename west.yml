@@ -52,8 +52,11 @@ manifest:
       remote: microchip
       repo-path: wireless-ble
       revision: 3a5c42d7fd8024495e5e0786b1263167418ca8f2
-
+    - name: zephyr-wireless
+      remote: microchip
+      repo-path: zephyr-wireless
+      revision: 43277362ba0df9c822a576f116e31a7dbac654a0
   self:
-    path: zsdk
+    path: mchp-zsdk
     # Configure west extensions.
     #west-commands: scripts/west-commands.yml
