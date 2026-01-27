@@ -46,8 +46,8 @@ manifest:
     - name: hal_microchip
       remote: microchip
       repo-path: mchp-hal
-      revision: f5e6963b729995fea3526a3f5edd6c2e2b61a3ac
-      path: modules/hal/hal_microchip
+      revision: e707375fe14647d34f82c9c747f86bdf7b82d0c9
+      path: modules/hal/microchip
     - name: wireless-ble
       remote: microchip
       repo-path: wireless-ble
