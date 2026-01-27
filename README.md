@@ -55,13 +55,15 @@ A typical workspace created using this manifest looks like:
 
 ```
 workspace/
+├── .west                      # West configuration
 ├── modules/
 │   └── hal/
 │       ├── cmsis_6/           # Upstream CMSIS 6 repository
 │       └── hal-microhcip/     # Microchip downstream fork of hal_microchip
 ├── zephyr/                    # Microchip downstream fork of Zephyr
 ├── mchp-zsdk/                 # Microchip SDK for Zephyr manifest repository
-└── mchp-wireless-ble/         # Microchip wireless ble repository
+├── zephyr-wireless/           # Micorhcip zephyr wireless
+└── wireless-ble/              # Microchip wireless ble repository
 
 ```
 
