@@ -26,7 +26,7 @@ manifest:
     - name: zephyr
       remote: microchip
       repo-path: mchp-zephyr
-      revision: 10b9520cacf450998150d725274a7d6b88c48e24
+      revision: b9e571688f9bc5beed53f57c44831527e4f493ce
       import:
         # Microchip SDK for Zephyr imports the Zephyr main tree at the
         # revision given above. Only the modules named below are imported.
