@@ -83,7 +83,7 @@ Instead of initializing your workspace with the upstream Zephyr manifest, use th
 west init -m https://github.com/Zephyr4Microchip/mchp-zsdk microchip_zephyr
 cd microchip_zephyr
 west update
-west blobs fetch
+west blobs fetch hal_microchip
 ```
 
 It is also possible to clone the repository manually, and use `west init -l` to
