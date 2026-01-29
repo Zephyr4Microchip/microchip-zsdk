@@ -19,6 +19,7 @@ manifest:
       import:
         # These modules are imported from west.yml in Zephyr repository.
         name-allowlist:
+          - cmsis
           - cmsis-dsp
           - cmsis-nn
           - cmsis_6
