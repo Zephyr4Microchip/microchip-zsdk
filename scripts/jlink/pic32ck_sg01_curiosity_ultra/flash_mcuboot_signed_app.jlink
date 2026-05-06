@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ * 
+ * JLink script to flash application v1.0.0 to slot0 @ 0x0C000000
+ */
+
+// Load signed app image to slot0 (PFM base address)
+loadfile build_app/zephyr/zephyr.signed.hex
+
+// Reset and run
+r
+g
+
+qc

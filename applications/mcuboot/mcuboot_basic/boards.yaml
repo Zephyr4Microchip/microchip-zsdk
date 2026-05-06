@@ -1,0 +1,29 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Board-specific build parameters for MCUboot demo.
+# Used by 'west mcuboot-build' to avoid hardcoding per-board values.
+#
+# To add a new board:
+#   1. Add entry here with all required parameters
+#   2. Create mcuboot/boards/<board>.conf and .overlay
+#   3. Create app_v1/boards/<board>.conf (if needed)
+#   4. Create app_v2/boards/<board>.conf (if needed)
+#   5. Run: west mcuboot-build -b <board>
+
+boards:
+  pic32ck_sg01_cult:
+    jlink_device: PIC32CK2051SG01144
+    slot_size: "0xFC000"
+    slot0_addr: "0x0C000000"
+    slot1_addr: "0x0C0FC000"
+    header_size: "0x400"
+    align: 8
+
+  pic32ck_gc01_cult:
+    jlink_device: PIC32CK2051GC01144
+    slot_size: "0xFC000"
+    slot0_addr: "0x0C000000"
+    slot1_addr: "0x0C0FC000"
+    header_size: "0x400"
+    align: 8

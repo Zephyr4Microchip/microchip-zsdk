@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ * 
+ * JLink script to flash MCUboot bootloader to BFM @ 0x08000000
+ */
+
+// Load MCUboot hex file (programs to BFM automatically)
+loadfile build_mcuboot/zephyr/zephyr.hex
+
+// Reset and run
+r
+g
+
+qc

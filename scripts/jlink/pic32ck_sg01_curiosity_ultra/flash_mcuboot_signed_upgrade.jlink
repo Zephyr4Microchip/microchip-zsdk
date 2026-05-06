@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ * 
+ * JLink script to flash application v2.0.0 to slot1 @ 0x0C0FC000 for upgrade
+ */
+
+// Erase slot1 area (960 KB starting at 0x0C110000)
+erase 0x0C110000, 0x0C1FFFFF
+
+// Load signed upgrade hex to slot1 @ 0x0C110000
+loadfile build_app/zephyr/zephyr.upgrade.hex
+
+// Reset - MCUboot will detect and swap images
+r
+g
+
+qc

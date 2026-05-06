@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ * 
+ * JLink script to erase both BFM and PFM
+ */
+
+// Erase BFM (Boot Flash Memory) - 128 KB @ 0x08000000
+erase 0x08000000, 0x0801FFFF
+
+// Erase PFM (Program Flash Memory) - 2 MB @ 0x0C000000
+erase 0x0C000000, 0x0C1FFFFF
+
+qc

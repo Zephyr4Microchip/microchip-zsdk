@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+# West extension commands for Microchip ZSDK.
+
+west-commands:
+  - file: scripts/west_commands/mcuboot_build.py
+    commands:
+      - name: mcuboot-build
+        class: McubootBuild
+        help: build MCUboot bootloader with signed application images

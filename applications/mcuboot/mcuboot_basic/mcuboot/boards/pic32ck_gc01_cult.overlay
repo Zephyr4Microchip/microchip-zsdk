@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * MCUboot DTS overlay for PIC32CK GC01 Curiosity Ultra.
+ *
+ * MCUboot itself lives in BFM (flash0 @ 0x08000000, 128 KB).
+ * It manages application images in PFM (flash0 @ 0x0C000000).
+ *
+ * This overlay redirects zephyr,flash and zephyr,code-partition
+ * so that the MCUboot binary is linked into flash0 (boot_partition).
+ *
+ * CONFIG_FLASH_BASE_ADDRESS = 0x08000000 (from zephyr,flash = &flash0).
+ * MCUboot jump address = FLASH_BASE + slot_offset + header_size.
+ *
+ * For this to land at 0x0C000400, slot offsets must encode the distance
+ * from BFM base to PFM: 0x0C000000 - 0x08000000 = 0x04000000.
+ *
+ * The board DTS already has the correct offsets (0x4000000, 0x40FC000, etc.)
+ * so this overlay only needs to set the chosen nodes for MCUboot linking.
+ */
+
+/ {
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &boot_partition;
+	};
+};
