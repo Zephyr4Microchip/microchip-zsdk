@@ -69,6 +69,10 @@ Build for a specific board:
 
     west mcuboot-build -b pic32ck_gc01_cult
 
+Build for a specific board (verbose):
+
+    west mcuboot-build -b pic32ck_sg01_cult --verbose
+
 Build and flash to the target:
 
     west mcuboot-build -b pic32ck_sg01_cult --flash
@@ -98,9 +102,11 @@ To add support for a new board:
    - header_size: Image header size in hex
    - align: Image alignment
 
-2. Create board-specific configuration files:
-   - mcuboot/boards/<board>.conf
-   - mcuboot/boards/<board>.overlay
+2. Add board-specific settings to app_v1/sysbuild/mcuboot.conf
+   (and app_v2/sysbuild/mcuboot.conf) if the new board needs
+   different MCUboot overrides.
+
+3. Optionally create board-specific app config files:
    - app_v1/boards/<board>.conf
    - app_v2/boards/<board>.conf
 '''
@@ -288,10 +294,16 @@ class McubootBuild(WestCommand):
             log.inf("")
 
     def _validate_board_files(self):
-        """Validate board-specific configuration files exist."""
+        """Validate MCUboot configuration files exist.
+
+        The standard approach uses sysbuild/mcuboot.conf (merge fragment) and
+        sysbuild/mcuboot.overlay from app_v1. These same files are passed as
+        -DOVERLAY_CONFIG and -DDTC_OVERLAY_FILE to the standalone MCUboot build,
+        ensuring identical configuration for both build methods.
+        """
         required_files = [
-            self.app_dir / 'mcuboot' / 'boards' / f'{self.board}.conf',
-            self.app_dir / 'mcuboot' / 'boards' / f'{self.board}.overlay',
+            self.app_dir / 'app_v1' / 'sysbuild' / 'mcuboot.conf',
+            self.app_dir / 'app_v1' / 'sysbuild' / 'mcuboot.overlay',
         ]
 
         optional_files = [
@@ -358,12 +370,19 @@ class McubootBuild(WestCommand):
             raise
 
     def _build_mcuboot(self):
-        """Build MCUboot bootloader."""
+        """Build MCUboot bootloader.
+
+        Uses -DOVERLAY_CONFIG (merge) instead of -DCONF_FILE (replace) so that
+        MCUboot's own prj.conf is preserved as the base configuration. The
+        sysbuild/mcuboot.conf fragment adds only the settings that upstream
+        does not provide. This matches how sysbuild auto-discovers the same
+        file as EXTRA_CONF_FILE.
+        """
         log.inf("[1/3] Building MCUboot...")
 
         build_dir = self.build_base / 'build_mcuboot'
-        overlay = self.app_dir / 'mcuboot' / 'boards' / f'{self.board}.overlay'
-        conf = self.app_dir / 'mcuboot' / 'boards' / f'{self.board}.conf'
+        overlay_conf = self.app_dir / 'app_v1' / 'sysbuild' / 'mcuboot.conf'
+        dtc_overlay = self.app_dir / 'app_v1' / 'sysbuild' / 'mcuboot.overlay'
 
         cmd = [
             'west', 'build',
@@ -377,8 +396,8 @@ class McubootBuild(WestCommand):
 
         cmd.extend([
             '--',
-            f'-DDTC_OVERLAY_FILE={self._cmake_path(overlay)}',
-            f'-DOVERLAY_CONFIG={self._cmake_path(conf)}',
+            f'-DOVERLAY_CONFIG={self._cmake_path(overlay_conf)}',
+            f'-DDTC_OVERLAY_FILE={self._cmake_path(dtc_overlay)}',
         ])
 
         self._run_command(cmd)

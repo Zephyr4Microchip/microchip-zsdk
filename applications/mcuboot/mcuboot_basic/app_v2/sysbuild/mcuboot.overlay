@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * MCUboot DTS overlay for PIC32CK SG/GC boards.
+ * Redirects MCUboot to build from boot_partition in BFM.
+ *
+ * Auto-discovered by sysbuild as ${APP_DIR}/sysbuild/mcuboot.overlay.
+ */
+
+/ {
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &boot_partition;
+	};
+};

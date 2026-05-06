@@ -45,7 +45,7 @@ Flash Memory). MCUboot resides in BFM and manages application images in PFM.
 
 > **Note:** This layout is specific to the PIC32CK2051 variant (2 MB PFM +
 > 128 KB BFM). Other PIC32CK variants with smaller PFM will require
-> adjusted slot sizes in the board overlay and signing commands.
+> adjusted slot sizes in the board DTS and signing commands.
 
 ## Requirements
 
@@ -60,31 +60,106 @@ Flash Memory). MCUboot resides in BFM and manages application images in PFM.
 ```
 mcuboot_basic/
 ├── app_common.h                  Shared header (state machine, update trigger)
+├── boards.yaml                   Board parameters (slot sizes, addresses, etc.)
+├── README.md                     This file
 ├── app_v1/                       Application v1.0.0 (slow blink)
 │   ├── CMakeLists.txt
 │   ├── prj.conf
+│   ├── sysbuild.conf             Sysbuild settings (boot mode, signature type)
+│   ├── sysbuild/
+│   │   ├── mcuboot.conf          MCUboot config fragment (merged with upstream)
+│   │   └── mcuboot.overlay       DTS overlay (chosen nodes for BFM linking)
 │   ├── boards/<board>.conf       Board-specific app configuration
 │   └── src/main.c
-├── app_v2/                       Application v2.0.0 (fast blink)
-│   ├── CMakeLists.txt
-│   ├── prj.conf
-│   ├── boards/<board>.conf       Board-specific app configuration
-│   └── src/main.c
-├── mcuboot/                      Board-specific MCUboot configuration
-│   └── boards/
-│       ├── <board>.conf
-│       └── <board>.overlay
-├── boards.yaml                   Board parameters (slot sizes, addresses, etc.)
-└── README.md                     This file
+└── app_v2/                       Application v2.0.0 (fast blink)
+    ├── CMakeLists.txt
+    ├── prj.conf
+    ├── sysbuild.conf             Sysbuild settings (boot mode, signature type)
+    ├── sysbuild/
+    │   ├── mcuboot.conf          MCUboot config fragment (merged with upstream)
+    │   └── mcuboot.overlay       DTS overlay (chosen nodes for BFM linking)
+    ├── boards/<board>.conf       Board-specific app configuration
+    └── src/main.c
 ```
+
+### MCUboot Configuration Architecture
+
+MCUboot configuration uses the **standard Zephyr sysbuild approach**: a
+`sysbuild/mcuboot.conf` fragment that is MERGED with MCUboot's own upstream
+`prj.conf` (not replacing it). This ensures upstream bug fixes and new
+settings are automatically inherited.
+
+| File | Purpose |
+|------|---------|
+| `app_vN/sysbuild/mcuboot.conf` | Config fragment merged with MCUboot's prj.conf |
+| `app_vN/sysbuild/mcuboot.overlay` | DTS overlay: sets `zephyr,flash` and `zephyr,code-partition` for BFM |
+
+Both build methods use identical configuration:
+
+- **Sysbuild**: auto-discovers `sysbuild/mcuboot.conf` as `EXTRA_CONF_FILE`
+  and `sysbuild/mcuboot.overlay` as `DTC_OVERLAY_FILE` (standard Zephyr
+  mechanism in `sysbuild_extensions.cmake`).
+- **west mcuboot-build**: passes `-DOVERLAY_CONFIG` and `-DDTC_OVERLAY_FILE`
+  pointing to `app_v1/sysbuild/mcuboot.conf` and `mcuboot.overlay`.
+
+The fragment only contains settings that MCUboot upstream does NOT provide.
+Settings already in MCUboot's `prj.conf` (e.g., `CONFIG_PM=n`,
+`CONFIG_MAIN_STACK_SIZE=10240`, `CONFIG_FLASH=y`) are not duplicated.
 
 ## Building and Running
 
-### Using West Command
+Two build methods are available, each targeting a different use case:
 
-The `west mcuboot-build` command automates the full workflow: build MCUboot,
-build both apps, sign images, and optionally flash to the target. This command
-can be run from anywhere within the west workspace.
+> **Important — scope difference between the two methods:**
+>
+> - **`west mcuboot-build`** is a **demo-only** command. It builds and programs
+>   the complete system (MCUboot + app_v1 + app_v2) in a single invocation,
+>   providing a ready-to-run firmware upgrade demonstration out of the box.
+>
+> - **Sysbuild** (`west build --sysbuild`) builds only MCUboot + one
+>   application (e.g., app_v1) and programs them together. The upgrade image
+>   (app_v2) is **not** built or programmed — it is the user's responsibility
+>   to build, sign, and deliver app_v2 through their own update mechanism
+>   (e.g., OTA, UART loader, external programmer). This reflects the real-world
+>   workflow where the initial firmware is factory-programmed and subsequent
+>   upgrades are delivered separately.
+
+### Method 1: Sysbuild (recommended for development)
+
+Sysbuild builds MCUboot and the application as a multi-image project in a
+single `west build` invocation. It produces a merged hex file for easy flashing.
+Only the bootloader and the primary application (slot0) are built and programmed.
+
+```console
+# Build MCUboot + app_v1 (from any directory in the workspace)
+$ west build --sysbuild -b pic32ck_sg01_cult \
+    ../microchip-zsdk/applications/mcuboot/mcuboot_basic/app_v1
+
+# Pristine build
+$ west build --pristine --sysbuild -b pic32ck_sg01_cult \
+    ../microchip-zsdk/applications/mcuboot/mcuboot_basic/app_v1
+
+# Flash the merged hex (MCUboot + signed app in one shot)
+$ west flash
+```
+
+Build outputs:
+- `build/mcuboot/zephyr/zephyr.hex` — MCUboot bootloader (BFM)
+- `build/app_v1/zephyr/zephyr.signed.hex` — Signed application (PFM)
+- `build/merged_*.hex` — Combined hex for single-operation flash
+
+> **Note on flashing**: Use the merged hex file or `west flash` with a
+> single-operation programmer. Multi-domain flashing with `west flash`
+> may cause chip erase between domains, destroying MCUboot before the
+> app is programmed.
+
+### Method 2: West Extension Command (full demo workflow)
+
+The `west mcuboot-build` command is designed specifically for this demo. It
+automates the complete workflow: build MCUboot, build both apps (v1 + v2),
+sign all images, and optionally flash the entire system via J-Link. After
+flashing, the board is immediately ready to demonstrate the firmware upgrade
+(press SW0 to trigger the swap from v1 to v2).
 
 ```console
 # Build for a specific board
@@ -123,9 +198,12 @@ in `boards.yaml`.
 ```console
 $ west build -b <BOARD> -d build_mcuboot \
     ../bootloader/mcuboot/boot/zephyr --pristine -- \
-    -DDTC_OVERLAY_FILE="../microchip-zsdk/applications/mcuboot/mcuboot_basic/mcuboot/boards/<BOARD>.overlay" \
-    -DOVERLAY_CONFIG="../microchip-zsdk/applications/mcuboot/mcuboot_basic/mcuboot/boards/<BOARD>.conf"
+    -DOVERLAY_CONFIG="../microchip-zsdk/applications/mcuboot/mcuboot_basic/app_v1/sysbuild/mcuboot.conf" \
+    -DDTC_OVERLAY_FILE="../microchip-zsdk/applications/mcuboot/mcuboot_basic/app_v1/sysbuild/mcuboot.overlay"
 ```
+
+> **Note:** `-DOVERLAY_CONFIG` merges with MCUboot's own `prj.conf` (unlike
+> `-DCONF_FILE` which replaces it). This ensures upstream fixes are preserved.
 
 **Step 2: Build and sign app_v1**
 
@@ -243,16 +321,44 @@ needed.
 
 ## MCUboot Configuration
 
-Key MCUboot settings (`mcuboot/boards/<BOARD>.conf`):
+The effective MCUboot configuration is the combination of:
+
+1. **MCUboot upstream `prj.conf`** (base — provides standard defaults)
+2. **`BOOTLOADER_image_default.cmake`** (sysbuild forces boot mode + signature)
+3. **`sysbuild/mcuboot.conf`** (our fragment — only additions/overrides)
+
+### Provided by MCUboot upstream (DO NOT duplicate)
+
+| Option | Value | Source |
+|--------|-------|--------|
+| `CONFIG_PM` | `n` | MCUboot prj.conf |
+| `CONFIG_MAIN_STACK_SIZE` | `10240` | MCUboot prj.conf |
+| `CONFIG_FLASH` | `y` | MCUboot prj.conf |
+| `CONFIG_LOG` / `CONFIG_LOG_MODE_MINIMAL` | `y` | MCUboot prj.conf |
+| `CONFIG_PICOLIBC` / `CONFIG_CBPRINTF_NANO` | `y` | MCUboot prj.conf |
+
+### Forced by sysbuild infrastructure (DO NOT duplicate)
+
+| Option | Value | Source |
+|--------|-------|--------|
+| `CONFIG_BOOT_SWAP_USING_MOVE` | `y` | BOOTLOADER_image_default.cmake |
+| `CONFIG_BOOT_SIGNATURE_TYPE_ECDSA_P256` | `y` | BOOTLOADER_image_default.cmake |
+| `CONFIG_BOOT_SIGNATURE_KEY_FILE` | `"root-ec-p256.pem"` | MCUboot Kconfig default |
+
+### Our fragment (`sysbuild/mcuboot.conf`)
 
 | Option | Value | Description |
 |--------|-------|-------------|
-| `CONFIG_BOOT_SWAP_USING_MOVE` | `y` | Swap algorithm with rollback capability |
-| `CONFIG_BOOT_SIGNATURE_TYPE_ECDSA_P256` | `y` | ECDSA-P256 signature verification |
+| `CONFIG_FLASH_MAP` | `y` | Flash partition map for slot access |
 | `CONFIG_BOOT_VALIDATE_SLOT0` | `y` | Verify primary slot on every boot |
 | `CONFIG_MCUBOOT_DOWNGRADE_PREVENTION` | `y` | Reject images with lower version numbers |
 | `CONFIG_BOOT_BOOTSTRAP` | `y` | Allow initial image installation from slot1 |
-| `CONFIG_BOOT_MAX_IMG_SECTORS` | 256 | Per-board sector count |
+| `CONFIG_SERIAL` / `CONFIG_CONSOLE` | `y` | Serial console for boot logs |
+| `CONFIG_GPIO` | `y` | LED visual feedback |
+| `CONFIG_MULTITHREADING` | `y` | Required by flash driver (ISR synchronization) |
+| `CONFIG_ROMSTART_RELOCATION_ROM` | `n` | MCUboot lives entirely in BFM, no relocation |
+| `CONFIG_BOOT_INTR_VEC_RELOC` | `y` | Update VTOR when jumping from BFM to PFM |
+| `CONFIG_BOOT_MAX_IMG_SECTORS` | `256` | Sector count (slot_size / erase_block_size) |
 
 ## Customization
 
@@ -266,19 +372,14 @@ To use a custom key pair:
    $ python imgtool.py keygen -k my-signing-key.pem -t ecdsa-p256
    ```
 
-2. Update `boards/mcuboot_<BOARD>.conf`:
+2. Add to `app_vN/sysbuild/mcuboot.conf`:
 
    ```
    CONFIG_BOOT_SIGNATURE_KEY_FILE="path/to/my-signing-key.pem"
    ```
 
-3. Update `app_v1/prj.conf` and `app_v2/prj.conf`:
-
-   ```
-   CONFIG_MCUBOOT_SIGNATURE_KEY_FILE="path/to/my-signing-key.pem"
-   ```
-
-4. Update the `--key` argument in the build scripts.
+3. Update the `--key` argument in signing commands (or in `boards.yaml`
+   if using `west mcuboot-build`).
 
 ### Adding More Application Versions
 
@@ -288,6 +389,7 @@ Copy `app_v2/` to `app_v3/` and modify:
 - `BLINK_INTERVAL_MS` for visual differentiation
 - Increment `--version` in the signing command
 - Set `--change-addresses` to `<SLOT1_ADDR>` for the target board
+- Copy `app_v2/sysbuild.conf` and `app_v2/sysbuild/` directory as-is
 
 ### Adding a New Board
 
@@ -301,13 +403,21 @@ To add support for another Microchip variant:
    - `header_size`: Image header size in hex
    - `align`: Image alignment
 
-2. Create board-specific configuration files:
-   - `mcuboot/boards/<board>.conf` — MCUboot configuration
-   - `mcuboot/boards/<board>.overlay` — MCUboot device tree overlay
-   - `app_v1/boards/<board>.conf` — App v1 configuration
-   - `app_v2/boards/<board>.conf` — App v2 configuration
+2. If the new board needs different MCUboot settings (different sector count,
+   relocation behavior, etc.), add them to `app_vN/sysbuild/mcuboot.conf`.
+   For boards sharing the same SoC family, the existing settings likely work.
 
-3. Ensure the board DTS has the correct `flash0` partitions
+3. Optionally create board-specific app configuration:
+   - `app_v1/boards/<board>.conf` — App v1 overrides (optional)
+   - `app_v2/boards/<board>.conf` — App v2 overrides (optional)
+
+4. Ensure the board DTS has the correct `flash0` partitions with:
+   - `boot_partition` in BFM
+   - `slot0_partition` and `slot1_partition` in PFM
+   - `ranges;` property on the partitions node
+
+5. The `sysbuild/mcuboot.overlay` works for any board that uses
+   `flash0` with `boot_partition` — no per-board overlay needed.
 
 Run `west mcuboot-build --list-boards` to verify the new board is detected.
 
@@ -318,16 +428,31 @@ Run `west mcuboot-build --list-boards` to verify the new board is detected.
 Check the serial console for MCUboot log output. Common causes:
 
 - Image signature verification failure (wrong key)
-- Image header size mismatch (must be `0x400`)
-- Slot size mismatch between overlay and `imgtool`
+- Image header size mismatch (must be `0x400` for PIC32CK)
+- Slot size mismatch between DTS partition and `imgtool --slot-size`
+- Missing `CONFIG_MAIN_STACK_SIZE=10240` causing stack overflow during
+  ECDSA verification (symptom: Usage Fault immediately after validation)
 
 **Application boots but upgrade does not work**
 
 Ensure app_v2 is flashed to slot1 (see per-board addresses above). Verify
 the serial output shows "Upgrade to v2.0.0 requested" before reboot.
 
+**Sysbuild flash erases MCUboot**
+
+When using `west flash` with sysbuild multi-domain builds, each domain may
+trigger a chip erase. The second erase destroys MCUboot (BFM) before the app
+(PFM) is programmed. Solution: use the merged hex file (`merged_*.hex`) for
+single-operation flashing, or use `west mcuboot-build --flash`.
+
 **Device resets immediately after pressing SW0**
 
 This was a known bug in the flash driver (buffer indexing).
 Ensure you are using the latest `flash_mchp_nvmctrl_g3.c` with
 the separated `src` pointer fix.
+
+**Build fails with "Unknown CMake command build_info"**
+
+Ensure you are building with `--sysbuild` flag. The `sysbuild/mcuboot.conf`
+fragment is auto-discovered by the sysbuild infrastructure — no custom
+`CMakeLists.txt` is needed in the `sysbuild/` directory.

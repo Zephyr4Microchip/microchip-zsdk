@@ -6,7 +6,7 @@
 #
 # To add a new board:
 #   1. Add entry here with all required parameters
-#   2. Create mcuboot/boards/<board>.conf and .overlay
+#   2. Create mcuboot/boards/<board>.conf
 #   3. Create app_v1/boards/<board>.conf (if needed)
 #   4. Create app_v2/boards/<board>.conf (if needed)
 #   5. Run: west mcuboot-build -b <board>
