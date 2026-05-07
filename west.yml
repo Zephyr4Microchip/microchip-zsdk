@@ -26,8 +26,11 @@ manifest:
           - fatfs
           - littlefs
           - lvgl
+          - mcuboot
+          - mbedtls
           - picolibc
           - segger
+          - tf-psa-crypto
           - zcbor
           - hal_atmel
     # Modules in zephyr repository west.yml but excluded from the name-allowlist are defined here.
