@@ -5,3 +5,5 @@
   ## Documentation
 
   [For introduction and getting started guide](doc/index.md)
+
+  Checkout the [Latest Release](https://github.com/Zephyr4Microchip/microchip-zsdk/releases/latest) for additional information.
