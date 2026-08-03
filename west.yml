@@ -15,7 +15,7 @@ manifest:
       # Zephyr is fetched from the following remote and revision.
       remote: microchip
       repo-path: microchip-zephyr
-      revision: v4.4.0.0
+      revision: 9614e5ff0364cd6583a9ba709ed9d496dae80940
       import:
         # These modules are imported from west.yml in Zephyr repository.
         name-allowlist:
@@ -38,7 +38,7 @@ manifest:
       # Overrides hal_microchip from Zephyr's west.yml with Microchip's version.
       remote: microchip
       repo-path: microchip-hal
-      revision: v4.4.0.0
+      revision: 2688de2d06285d087070d2a9b10b697690016524
       path: modules/hal/microchip
   self:
     path: microchip-zsdk
