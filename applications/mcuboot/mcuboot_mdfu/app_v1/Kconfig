@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config APP_MDFU_AUTO_ENTER
+	bool "Auto-enter MDFU receive mode on boot (TEST ONLY)"
+	default n
+	help
+	  When enabled, the application enters MDFU receive mode immediately
+	  after boot instead of waiting for the user to press 'u' on the
+	  console. Intended only for bring-up/debugging of the UART DFU
+	  transport, where juggling a console terminal to press 'u' is
+	  inconvenient. Leave disabled for normal operation.
+
+source "Kconfig.zephyr"

@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * MCUboot DTS overlay — auto-discovered by sysbuild for all boards.
+ * Directs MCUboot to build from boot_partition.
+ *
+ * Auto-discovered by sysbuild as ${APP_DIR}/sysbuild/mcuboot.overlay.
+ */
+
+/ {
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &boot_partition;
+	};
+};
