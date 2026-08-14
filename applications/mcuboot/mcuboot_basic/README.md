@@ -1,19 +1,17 @@
 # MCUboot Basic Firmware Upgrade
 
-Demonstrate MCUboot secure boot and firmware upgrade on PIC32CK SG01 and GC01.
+Demonstrate MCUboot secure boot and firmware upgrade on Microchip Curiosity
+Ultra boards.
 
 ## Overview
 
 This application demonstrates a complete MCUboot boot chain with secure
-firmware upgrade (swap-using-move) on the Microchip PIC32CK Curiosity Ultra
-boards. Supported boards:
+firmware upgrade (swap-using-move). Supported boards:
 
 - **PIC32CK SG01 Curiosity Ultra** (`pic32ck_sg01_cult`) — Cortex-M33 with TrustZone
 - **PIC32CK GC01 Curiosity Ultra** (`pic32ck_gc01_cult`) — Cortex-M33 without TrustZone
+- **PIC32CX SG61 Curiosity Ultra** (`pic32cx_sg61_cult`) — Cortex-M4F
 
-Both boards share the same SoC (PIC32CK2051) and flash topology:
-
-- **MCUboot bootloader** running in BFM (Boot Flash Memory, 128 KB)
 - **app_v1** (v1.0.0): slow LED blink (1 s period)
 - **app_v2** (v2.0.0): fast LED blink (250 ms period)
 
@@ -27,13 +25,13 @@ Images are signed with ECDSA-P256 using MCUboot's built-in test key
 > **Warning:** The test key shipped with MCUboot is **public and well-known**.
 > It must be replaced with a private key for production deployments.
 
-## Memory Layout (PIC32CK2051 — SG01 and GC01)
+## Memory Layout
+
+### PIC32CK2051 (SG01 / GC01) — 2 MB PFM + 128 KB BFM
 
 The PIC32CK2051 has two physically separate flash regions exposed as a
 unified flash device (`flash0`): BFM (Boot Flash Memory) and PFM (Program
 Flash Memory). MCUboot resides in BFM and manages application images in PFM.
-
-### PIC32CK2051 (SG01 / GC01) — 2 MB PFM
 
 | Region                 | Address      | Size              |
 |------------------------|--------------|-------------------|
@@ -47,9 +45,21 @@ Flash Memory). MCUboot resides in BFM and manages application images in PFM.
 > 128 KB BFM). Other PIC32CK variants with smaller PFM will require
 > adjusted slot sizes in the board DTS and signing commands.
 
+### PIC32CX1025SG61 (SG61) — 1 MB contiguous flash
+
+The PIC32CX SG61 has a single contiguous flash region. MCUboot resides at
+the start of flash and application images follow immediately after.
+
+| Region                 | Address      | Size        |
+|------------------------|--------------|-------------|
+| boot_partition (MCUboot) | 0x00000000 | 64 KB       |
+| slot0 (active app)     | 0x00010000   | 448 KB (0x70000) |
+| slot1 (upgrade)        | 0x00080000   | 448 KB (0x70000) |
+| storage                | 0x000F0000   | 64 KB       |
+
 ## Requirements
 
-- Microchip PIC32CK SG01 or GC01 Curiosity Ultra board
+- Microchip PIC32CK SG01, GC01, or PIC32CX SG61 Curiosity Ultra board
 - J-Link debug probe (on-board or external)
 - Serial terminal (115200 baud, 8N1)
 - Zephyr SDK with `arm-none-eabi` toolchain
@@ -140,7 +150,7 @@ $ west build --pristine --sysbuild -b pic32ck_sg01_cult \
     ../microchip-zsdk/applications/mcuboot/mcuboot_basic/app_v1
 
 # Flash the merged hex (MCUboot + signed app in one shot)
-$ west flash
+$ west flash --runner jlink
 ```
 
 Build outputs:
@@ -148,10 +158,9 @@ Build outputs:
 - `build/app_v1/zephyr/zephyr.signed.hex` — Signed application (PFM)
 - `build/merged_*.hex` — Combined hex for single-operation flash
 
-> **Note on flashing**: Use the merged hex file or `west flash` with a
-> single-operation programmer. Multi-domain flashing with `west flash`
-> may cause chip erase between domains, destroying MCUboot before the
-> app is programmed.
+> **Note on flashing**: Always use `--runner jlink` with `west flash`. The
+> default `mplab_ipe` programmer erases flash between each image write in
+> multi-domain builds, destroying MCUboot before the app is programmed.
 
 ### Method 2: West Extension Command (full demo workflow)
 
@@ -241,6 +250,7 @@ $ arm-zephyr-eabi-objcopy -I binary -O ihex --change-addresses=<SLOT1_ADDR> \
 |-------|-----------|------------|------------|-------------|-------|
 | `pic32ck_sg01_cult` | `0xFC000` | `0x0C000000` | `0x0C0FC000` | `0x400` | `8` |
 | `pic32ck_gc01_cult` | `0xFC000` | `0x0C000000` | `0x0C0FC000` | `0x400` | `8` |
+| `pic32cx_sg61_cult` | `0x70000` | `0x00010000` | `0x00080000` | `0x400` | `8` |
 
 **Step 4: Flash**
 
@@ -250,6 +260,7 @@ Flash images via J-Link:
 |-------|--------------|
 | `pic32ck_sg01_cult` | `PIC32CK2051SG01144` |
 | `pic32ck_gc01_cult` | `PIC32CK2051GC01144` |
+| `pic32cx_sg61_cult` | `PIC32CX1025SG61128` |
 
 ```console
 $ JLinkExe -device <JLINK_DEVICE> -if SWD -speed 4000 -autoconnect 1 \
@@ -304,20 +315,19 @@ After flashing the combined image, the following sequence is expected:
 
 ## Board Differences
 
-| Feature | SG01 | GC01 |
-|---------|------|------|
-| CPU | Cortex-M33 | Cortex-M33 |
-| TrustZone | Yes (auto-enabled) | No |
-| PFM size | 2 MB | 2 MB |
-| Slot size | 1008 KB | 1008 KB |
-| Clock | 120 MHz | 120 MHz |
-| LED0 | PD20 (secure) | PD20 |
-| Console | SERCOM5 | SERCOM5 |
-| JLink device | PIC32CK2051SG01144 | PIC32CK2051GC01144 |
+| Feature | SG01 | GC01 | SG61 |
+|---------|------|------|------|
+| CPU | Cortex-M33 | Cortex-M33 | Cortex-M4F |
+| TrustZone | Yes (auto-enabled) | No | No |
+| Flash | 2 MB PFM + 128 KB BFM | 2 MB PFM + 128 KB BFM | 1 MB contiguous |
+| Slot size | 1008 KB | 1008 KB | 448 KB |
+| Clock | 120 MHz | 120 MHz | 120 MHz |
+| LED0 | PD20 (secure GPIO) | PD20 | PC21 |
+| Console | SERCOM5 | SERCOM5 | SERCOM4 |
+| JLink device | PIC32CK2051SG01144 | PIC32CK2051GC01144 | PIC32CX1025SG61128 |
 
 TrustZone is handled automatically by the SoC `Kconfig.defconfig` — it is
-enabled only for SG series boards. No application-level configuration is
-needed.
+enabled only for SG01. No application-level configuration is needed.
 
 ## MCUboot Configuration
 
@@ -440,10 +450,10 @@ the serial output shows "Upgrade to v2.0.0 requested" before reboot.
 
 **Sysbuild flash erases MCUboot**
 
-When using `west flash` with sysbuild multi-domain builds, each domain may
-trigger a chip erase. The second erase destroys MCUboot (BFM) before the app
-(PFM) is programmed. Solution: use the merged hex file (`merged_*.hex`) for
-single-operation flashing, or use `west mcuboot-build --flash`.
+When using `west flash` with the default `mplab_ipe` programmer, flash is erased
+between each image write in multi-domain builds. The second erase destroys
+MCUboot (BFM) before the app (PFM) is programmed. Solution: use
+`west flash --runner jlink`, or use `west mcuboot-build --flash`.
 
 **Device resets immediately after pressing SW0**
 

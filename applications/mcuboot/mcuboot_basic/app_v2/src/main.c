@@ -1,7 +1,10 @@
 /*
  * Copyright (c) 2026 Microchip Technology Inc.
- * SPDX-License-Identifier: Apache-2.0
  *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
  * MCUboot Demo Application v2.0.0 - FAST BLINK
  *
  * This is the upgraded firmware - LED blinks FAST (250ms)

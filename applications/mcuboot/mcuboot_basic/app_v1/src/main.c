@@ -1,7 +1,10 @@
 /*
  * Copyright (c) 2026 Microchip Technology Inc.
- * SPDX-License-Identifier: Apache-2.0
  *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
  * MCUboot Demo Application v1.0.0 - SLOW BLINK
  *
  * Firmware Upgrade Demo:

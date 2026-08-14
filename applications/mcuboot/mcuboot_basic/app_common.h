@@ -1,7 +1,10 @@
 /*
  * Copyright (c) 2026 Microchip Technology Inc.
- * SPDX-License-Identifier: Apache-2.0
  *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
  * Common definitions and functions for MCUboot demo applications.
  * This header provides a shared interface for firmware update triggers
  * across all application versions.
