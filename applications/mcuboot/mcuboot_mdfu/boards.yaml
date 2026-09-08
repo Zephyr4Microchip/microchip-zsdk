@@ -35,3 +35,11 @@ boards:
     slot1_addr: "0x00080000"
     header_size: "0x400"
     align: 8
+  
+  pic32cx_sg41_cult:
+  jlink_device: PIC32CX1025SG41128
+  slot_size: "0x70000"
+  slot0_addr: "0x00010000"
+  slot1_addr: "0x00080000"
+  header_size: "0x400"
+  align: 8

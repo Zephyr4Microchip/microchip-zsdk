@@ -10,12 +10,13 @@ firmware upgrade (swap-using-move). Supported boards:
 
 - **PIC32CK SG01 Curiosity Ultra** (`pic32ck_sg01_cult`) — Cortex-M33 with TrustZone
 - **PIC32CK GC01 Curiosity Ultra** (`pic32ck_gc01_cult`) — Cortex-M33 without TrustZone
+- **PIC32CX SG41 Curiosity Ultra** (`pic32cx_sg41_cult`) — Cortex-M4F
 - **PIC32CX SG61 Curiosity Ultra** (`pic32cx_sg61_cult`) — Cortex-M4F
 
 - **app_v1** (v1.0.0): slow LED blink (1 s period)
 - **app_v2** (v2.0.0): fast LED blink (250 ms period)
 
-The user triggers the upgrade by pressing the SW0 button or sending `y`
+The user triggers the upgrade by pressing the SW button or sending `y`
 over the serial console. MCUboot swaps slot0 and slot1 images on the next
 reboot, with automatic rollback if the new image is not confirmed.
 
@@ -45,9 +46,9 @@ Flash Memory). MCUboot resides in BFM and manages application images in PFM.
 > 128 KB BFM). Other PIC32CK variants with smaller PFM will require
 > adjusted slot sizes in the board DTS and signing commands.
 
-### PIC32CX1025SG61 (SG61) — 1 MB contiguous flash
+### PIC32CX1025 (SG41 / SG61) — 1 MB contiguous flash
 
-The PIC32CX SG61 has a single contiguous flash region. MCUboot resides at
+The PIC32CX1025 has a single contiguous flash region. MCUboot resides at
 the start of flash and application images follow immediately after.
 
 | Region                 | Address      | Size        |
@@ -59,7 +60,7 @@ the start of flash and application images follow immediately after.
 
 ## Requirements
 
-- Microchip PIC32CK SG01, GC01, or PIC32CX SG61 Curiosity Ultra board
+- Microchip PIC32CK SG01, GC01, or PIC32CX SG61, SG41 Curiosity Ultra board
 - J-Link debug probe (on-board or external)
 - Serial terminal (115200 baud, 8N1)
 - Zephyr SDK with `arm-none-eabi` toolchain
@@ -168,7 +169,7 @@ The `west mcuboot-build` command is designed specifically for this demo. It
 automates the complete workflow: build MCUboot, build both apps (v1 + v2),
 sign all images, and optionally flash the entire system via J-Link. After
 flashing, the board is immediately ready to demonstrate the firmware upgrade
-(press SW0 to trigger the swap from v1 to v2).
+(press SW to trigger the swap from v1 to v2).
 
 ```console
 # Build for a specific board
@@ -250,16 +251,18 @@ $ arm-zephyr-eabi-objcopy -I binary -O ihex --change-addresses=<SLOT1_ADDR> \
 |-------|-----------|------------|------------|-------------|-------|
 | `pic32ck_sg01_cult` | `0xFC000` | `0x0C000000` | `0x0C0FC000` | `0x400` | `8` |
 | `pic32ck_gc01_cult` | `0xFC000` | `0x0C000000` | `0x0C0FC000` | `0x400` | `8` |
+| `pic32cx_sg41_cult` | `0x70000` | `0x00010000` | `0x00080000` | `0x400` | `8` |
 | `pic32cx_sg61_cult` | `0x70000` | `0x00010000` | `0x00080000` | `0x400` | `8` |
 
 **Step 4: Flash**
 
 Flash images via J-Link:
 
-| Board | JLink Device |
-|-------|--------------|
+| Board               | JLink Device         |
+|---------------------|----------------------|
 | `pic32ck_sg01_cult` | `PIC32CK2051SG01144` |
 | `pic32ck_gc01_cult` | `PIC32CK2051GC01144` |
+| `pic32cx_sg41_cult` | `PIC32CX1025SG41128` |
 | `pic32cx_sg61_cult` | `PIC32CX1025SG61128` |
 
 ```console
@@ -278,12 +281,12 @@ After flashing the combined image, the following sequence is expected:
    Serial output:
    ```
    MCUboot Demo v1.0.0 - Slow Blink (1s)
-   Press SW0 or 'y' to upgrade to v2.0.0
+   Press SW or 'y' to upgrade to v2.0.0
 
    Image v1.0.0 confirmed
    ```
 
-3. **User triggers upgrade**: Press **SW0** button or send `y` via serial.
+3. **User triggers upgrade**: Press **SW** button or send `y` via serial.
 
    Serial output:
    ```
@@ -298,13 +301,13 @@ After flashing the combined image, the following sequence is expected:
 4. **MCUboot performs swap**: On reboot, MCUboot detects the upgrade
    request, verifies app_v2's signature, and swaps slot0/slot1.
 
-5. **app_v2 starts**: LED 0 blinks fast (250 ms period).
+5. **app_v2 starts**: LED blinks fast (250 ms period).
 
    Serial output:
    ```
    MCUboot Demo v2.0.0 - Fast Blink (250ms)
    Upgrade successful!
-   Press SW0 or 'y' to upgrade to v3.0.0
+   Press SW or 'y' to upgrade to v3.0.0
 
    Image v2.0.0 confirmed
    ```
@@ -315,16 +318,16 @@ After flashing the combined image, the following sequence is expected:
 
 ## Board Differences
 
-| Feature | SG01 | GC01 | SG61 |
-|---------|------|------|------|
-| CPU | Cortex-M33 | Cortex-M33 | Cortex-M4F |
-| TrustZone | Yes (auto-enabled) | No | No |
-| Flash | 2 MB PFM + 128 KB BFM | 2 MB PFM + 128 KB BFM | 1 MB contiguous |
-| Slot size | 1008 KB | 1008 KB | 448 KB |
-| Clock | 120 MHz | 120 MHz | 120 MHz |
-| LED0 | PD20 (secure GPIO) | PD20 | PC21 |
-| Console | SERCOM5 | SERCOM5 | SERCOM4 |
-| JLink device | PIC32CK2051SG01144 | PIC32CK2051GC01144 | PIC32CX1025SG61128 |
+| Feature       | SG01                   | GC01                   | SG41               | SG61               |
+|---------------|------------------------|------------------------|--------------------|--------------------|
+| CPU           | Cortex-M33             | Cortex-M33             | Cortex-M4F         | Cortex-M4F         |
+| TrustZone     | Yes (auto-enabled)     | No                     | No                 | No                 |
+| Flash         | 2 MB PFM + 128 KB BFM  | 2 MB PFM + 128 KB BFM  | 1 MB contiguous    | 1 MB contiguous    |
+| Slot size     | 1008 KB                | 1008 KB                | 448 KB             | 448 KB             |
+| Clock         | 120 MHz                | 120 MHz                | 120 MHz            | 120 MHz            |
+| LED           | PD20 (secure GPIO)     | PD20                   | PC21               | PC21               |
+| Console       | SERCOM5                | SERCOM5                | SERCOM4            | SERCOM4            |
+| JLink device  | PIC32CK2051SG01144     | PIC32CK2051GC01144     | PIC32CX1025SG41128 | PIC32CX1025SG61128 |
 
 TrustZone is handled automatically by the SoC `Kconfig.defconfig` — it is
 enabled only for SG01. No application-level configuration is needed.
@@ -455,7 +458,7 @@ between each image write in multi-domain builds. The second erase destroys
 MCUboot (BFM) before the app (PFM) is programmed. Solution: use
 `west flash --runner jlink`, or use `west mcuboot-build --flash`.
 
-**Device resets immediately after pressing SW0**
+**Device resets immediately after pressing SW**
 
 This was a known bug in the flash driver (buffer indexing).
 Ensure you are using the latest `flash_mchp_nvmctrl_g3.c` with

@@ -8,7 +8,7 @@
  * MCUboot Demo Application v1.0.0 - SLOW BLINK
  *
  * Firmware Upgrade Demo:
- *   - Press SW0 button OR enter 'y' via serial to upgrade to v2.0.0
+ *   - Press SW button OR enter 'y' via serial to upgrade to v2.0.0
  *   - After upgrade, LED will blink FAST (250ms)
  *
  * State Machine Architecture:
@@ -49,7 +49,7 @@ static void app_state_init(void)
 	/* Display banner */
 	printk("\n");
 	printk("MCUboot Demo v%d.0.0 - Slow Blink (1s)\n", app_data.current_version);
-	printk("Press SW0 or 'y' to upgrade to v%d.0.0\n", app_data.target_version);
+	printk("Press SW or 'y' to upgrade to v%d.0.0\n", app_data.target_version);
 	printk("\n");
 
 	/* Confirm current image to prevent rollback */

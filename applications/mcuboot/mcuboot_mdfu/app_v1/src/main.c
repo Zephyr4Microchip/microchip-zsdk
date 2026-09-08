@@ -8,7 +8,7 @@
  * MCUboot Demo Application v1.0.0 - SLOW BLINK
  *
  * Firmware Upgrade Demo:
- *   - Press SW0 button OR enter 'y' via serial to upgrade to v2.0.0
+ *   - Press SW button OR enter 'y' via serial to upgrade to v2.0.0
  *     (requires a v2 image already present in slot1)
  *   - Enter 'u' via serial to receive a new image over MDFU (UART) and
  *     then automatically upgrade
@@ -72,7 +72,7 @@ static void app_state_init(void)
 	/* Display banner */
 	printk("\n");
 	printk("MCUboot Demo v%d.0.0 - Slow Blink (1s)\n", app_data.current_version);
-	printk("Press SW0 or 'y' to upgrade to v%d.0.0 (slot1 must be pre-loaded)\n",
+	printk("Press SW or 'y' to upgrade to v%d.0.0 (slot1 must be pre-loaded)\n",
 	       app_data.target_version);
 	printk("Press 'u' to receive upgrade image via MDFU (pymdfu host)\n");
 	printk("\n");

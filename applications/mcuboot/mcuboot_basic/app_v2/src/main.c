@@ -11,7 +11,7 @@
  * Downgrade prevention is enabled - cannot rollback to v1.0.0
  *
  * Firmware Upgrade Demo:
- *   - Press SW0 button OR enter 'y' via serial to upgrade to v3.0.0
+ *   - Press SW button OR enter 'y' via serial to upgrade to v3.0.0
  *   - You can flash app_v3 to slot1 and trigger update from here
  *
  * State Machine Architecture:
@@ -55,7 +55,7 @@ static void app_state_init(void)
 	printk("\n");
 	printk("MCUboot Demo v%d.0.0 - Fast Blink (250ms)\n", app_data.current_version);
 	printk("Upgrade successful!\n");
-	printk("Press SW0 or 'y' to upgrade to v%d.0.0\n", app_data.target_version);
+	printk("Press SW or 'y' to upgrade to v%d.0.0\n", app_data.target_version);
 	printk("\n");
 
 	/* Confirm current image to prevent rollback */
